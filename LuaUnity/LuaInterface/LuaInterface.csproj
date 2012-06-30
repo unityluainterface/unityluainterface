@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{186F6DDB-536D-4972-91EE-FAA46D4C9485}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>LuaInterface</RootNamespace>
+    <AssemblyName>LuaInterface</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Windows|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <DefineConstants>__Windows__</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="MyClass.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="..\src\CheckType.cs">
+      <Link>CheckType.cs</Link>
+    </Compile>
+    <Compile Include="..\src\GenerateEventAssembly.cs">
+      <Link>GenerateEventAssembly.cs</Link>
+    </Compile>
+    <Compile Include="..\src\Lua.cs">
+      <Link>Lua.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaBase.cs">
+      <Link>LuaBase.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaDLL.cs">
+      <Link>LuaDLL.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaException.cs">
+      <Link>LuaException.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaFunction.cs">
+      <Link>LuaFunction.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaGlobalAttribute.cs">
+      <Link>LuaGlobalAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaHideAttribute.cs">
+      <Link>LuaHideAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaRegistrationHelper.cs">
+      <Link>LuaRegistrationHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaScriptException.cs">
+      <Link>LuaScriptException.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaTable.cs">
+      <Link>LuaTable.cs</Link>
+    </Compile>
+    <Compile Include="..\src\LuaUserData.cs">
+      <Link>LuaUserData.cs</Link>
+    </Compile>
+    <Compile Include="..\src\Metatables.cs">
+      <Link>Metatables.cs</Link>
+    </Compile>
+    <Compile Include="..\src\MethodWrapper.cs">
+      <Link>MethodWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\src\ObjectTranslator.cs">
+      <Link>ObjectTranslator.cs</Link>
+    </Compile>
+    <Compile Include="..\src\ProxyType.cs">
+      <Link>ProxyType.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
