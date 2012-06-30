@@ -24,6 +24,7 @@ PLATS= aix ansi bsd freebsd generic linux macosx mingw posix solaris
 
 LUA_A=	liblua.a
 LUA_S= liblua5.1.so
+STUB= luanet.so
 CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
 	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
 	lundump.o lvm.o lzio.o
@@ -44,7 +45,7 @@ SHARED=-dynamiclib -undefined dynamic_lookup
 
 default: $(PLAT)
 
-all:	$(ALL_T) $(LUA_S)
+all:	$(ALL_T) $(LUA_S) $(STUB)
 
 o:	$(ALL_O)
 
@@ -56,6 +57,9 @@ $(LUA_A): $(CORE)
 
 $(LUA_S): $(CORE)
 	gcc $(SHARED) -o $(LUA_S) $(CORE)
+
+$(STUB): luastdcall.c
+	gcc $(SHARED) -o $(STUB) luastdcall.c
 
 $(LUA_T): $(LUA_O) $(LUA_A)
 	$(CC) -o $@ $(MYLDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
