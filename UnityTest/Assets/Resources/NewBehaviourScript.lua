@@ -28,7 +28,6 @@ local OnMouseDown = function(self)
     log ('Clicked')
     -- we have to refer to static methods explicitly like this
     unity.MonoBehaviour.Instantiate(sphere,transform.position,transform.rotation)
-
 end
 
 

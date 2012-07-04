@@ -1,6 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="c:\Users\steve\Unity\LuaUnity\LuaUnity\LuaUnity.cs">
+    <Files>
+      <File FileName="c:\Users\steve\Unity\LuaUnity\LuaUnity\LuaUnity.cs" Line="11" Column="7" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
