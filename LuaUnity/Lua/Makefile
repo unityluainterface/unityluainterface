@@ -7,7 +7,12 @@
 # Your platform. See PLATS for possible values.
 PLAT= none
 
-CC= gcc
+SHARED=-dynamiclib -undefined dynamic_lookup
+
+# AFAIK, Unity is a 32-bit application. If so, then -m32 is appropriate for
+# building the shared library.
+
+CC= gcc -m32
 CFLAGS= -O2 -Wall $(MYCFLAGS)
 AR= ar rcu
 RANLIB= ranlib
@@ -41,7 +46,7 @@ ALL_O= $(CORE_O) $(LIB_O) $(LUA_O) $(LUAC_O)
 ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T)
 ALL_A= $(LUA_A)
 CORE=$(CORE_O) $(LIB_O)
-SHARED=-dynamiclib -undefined dynamic_lookup
+
 
 default: $(PLAT)
 
