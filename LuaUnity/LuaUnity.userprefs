@@ -1,8 +1,12 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="c:\Users\steve\Unity\LuaUnity\LuaUnity\LuaUnity.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="LuaUnity\LuaUnity.cs">
     <Files>
-      <File FileName="c:\Users\steve\Unity\LuaUnity\LuaUnity\LuaUnity.cs" Line="11" Column="7" />
+      <File FileName="LuaUnity\LuaUnity.cs" Line="83" Column="20" />
+      <File FileName="src\LuaDLL.cs" Line="329" Column="15" />
+      <File FileName="src\Lua.cs" Line="145" Column="50" />
+      <File FileName="src\LuaScriptException.cs" Line="33" Column="34" />
+      <File FileName="src\LuaRegistrationHelper.cs" Line="15" Column="49" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

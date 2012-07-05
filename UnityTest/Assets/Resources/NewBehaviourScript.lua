@@ -21,7 +21,7 @@ local Start = function(self)
 end
 
 local Update = function (self)
-    transform:Translate(0,0,0.1*delta)
+    transform:Translate(0,0,0.01*delta)
 end
 
 local OnMouseDown = function(self)

@@ -9,7 +9,7 @@ function Sphere:Start()
 end
 
 function Sphere:Update()
-	self.this.transform:Translate(0,0.1*delta,0)
+	self.this.transform:Translate(0,0.01*delta,0)
 end
 
 return Sphere
