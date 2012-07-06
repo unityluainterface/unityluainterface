@@ -9,7 +9,10 @@ local transform
 -- constructor for objects of this kind
 local Init = function(this)
     transform = this.transform
-    return { this = this }
+    return {
+        velocity = 0,
+        this = this
+    }
 end
 
 local sphere
@@ -21,7 +24,7 @@ local Start = function(self)
 end
 
 local Update = function (self)
-    transform:Translate(0,0,0.01*delta)
+    transform:Translate(0,0,self.velocity*delta)
 end
 
 local OnMouseDown = function(self)

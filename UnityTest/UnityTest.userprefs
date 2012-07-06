@@ -1,9 +1,10 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\ThreadedLua.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\LuaUnity.cs">
     <Files>
-      <File FileName="d:\dev\lua\unityluainterface\UnityTest\Assets\NewBehaviourScript.cs" Line="13" Column="1" />
-      <File FileName="Assets\ThreadedLua.cs" Line="76" Column="28" />
+      <File FileName="d:\dev\lua\unityluainterface\UnityTest\Assets\NewBehaviourScript.cs" Line="1" Column="1" />
+      <File FileName="Assets\ThreadedLua.cs" Line="1" Column="1" />
+      <File FileName="Assets\LuaUnity.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
