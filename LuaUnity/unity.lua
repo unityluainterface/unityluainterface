@@ -20,7 +20,9 @@ while l do
     if line == nil then break end
     -- this is how the server encodes multiple lines..
     line = line:gsub('\002','\n')
-	print(line)
+    if line:match '%S+\n' then
+        io.write(line)
+    end
     io.write '> '
 	l = io.read()
 end

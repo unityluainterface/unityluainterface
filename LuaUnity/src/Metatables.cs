@@ -21,20 +21,22 @@ namespace LuaInterface
          * __index metafunction for CLR objects. Implemented in Lua.
          */
         internal static string luaIndexFunction =
-            "local function index(obj,name)\n" +
-            "  local meta=getmetatable(obj)\n" +
-            "  local cached=meta.cache[name]\n" +
-            "  if cached~=nil  then\n" +
-            "    return cached\n" +
-            "  else\n" +
-            "    local value,isFunc=get_object_member(obj,name)\n" +
-            "    if isFunc then\n" +
-            "      meta.cache[name]=value\n" +
-            "    end\n" +
-            "    return value\n" +
-            "  end\n" +
-            "end\n" +
-            "return index";
+    @"
+        local function index(obj,name)
+        local meta=getmetatable(obj)
+        local cached=meta.cache[name]
+        if cached then
+           return cached
+        else
+           local value,isFunc = get_object_member(obj,name)
+           if value==nil and type(isFunc)=='string' then error(isFunc,2) end
+           if isFunc then
+            meta.cache[name]=value
+           end
+           return value
+         end
+    end
+    return index";
 
         private ObjectTranslator translator;
         private Hashtable memberCache = new Hashtable();
@@ -122,7 +124,6 @@ namespace LuaInterface
             }
         }
 
-
         /*
          * Called by the __index metafunction of CLR objects in case the
          * method is not cached or it is a field/property/event.
@@ -141,7 +142,7 @@ namespace LuaInterface
             }
 
             object index = translator.getObject(luaState, 2);
-            // Type indexType = index.GetType(); //* not used
+            Type indexType = index.GetType(); //* not used
 
             string methodName = index as string;        // will be null if not a string arg
             Type objType = obj.GetType();
@@ -156,42 +157,25 @@ namespace LuaInterface
                     return getMember(luaState, objType, obj, methodName, BindingFlags.Instance | BindingFlags.IgnoreCase);
             }
             catch { }
+            bool failed = true;
 
             // Try to access by array if the type is right and index is an int (lua numbers always come across as double)
             if (objType.IsArray && index is double)
             {
                 int intIndex = (int)((double)index);
-
-                if (objType.UnderlyingSystemType == typeof(float[]))
-                {
-                    float[] arr = ((float[])obj);
-                    translator.push(luaState, arr[intIndex]);
+                Array aa = obj as Array;
+                if (intIndex >= aa.Length) {
+                    return translator.pushError(luaState,"array index out of bounds: "+intIndex + " " + aa.Length);
                 }
-                else if (objType.UnderlyingSystemType == typeof(double[]))
-                {
-                    double[] arr = ((double[])obj);
-                    translator.push(luaState, arr[intIndex]);
-                }
-                else if (objType.UnderlyingSystemType == typeof(int[]))
-                {
-                    int[] arr = ((int[])obj);
-                    translator.push(luaState, arr[intIndex]);
-                }
-                else
-                {
-                    object[] arr = (object[])obj;
-                    if (intIndex >= arr.Length) {
-                        translator.throwError(luaState,"array index out of bounds: "+intIndex + " " + arr.Length);
-                         LuaDLL.lua_pushnil(luaState);
-                        return 1;
-                    }
-                    translator.push(luaState, arr[intIndex]);
-                }
+                object val = aa.GetValue(intIndex);
+                translator.push (luaState,val);
+                failed = false;
             }
             else
             {
                 // Try to use get_Item to index into this .net object
                 //MethodInfo getter = objType.GetMethod("get_Item");
+                // issue here is that there may be multiple indexers..
                 MethodInfo[] methods = objType.GetMethods();
 
                 foreach (MethodInfo mInfo in methods)
@@ -203,36 +187,30 @@ namespace LuaInterface
                         {
                             MethodInfo getter = mInfo;
                             ParameterInfo[] actualParms = (getter != null) ? getter.GetParameters() : null;
-
                             if (actualParms == null || actualParms.Length != 1)
                             {
-                                translator.throwError(luaState, "method not found (or no indexer): " + index);
-
-                                LuaDLL.lua_pushnil(luaState);
+                                return translator.pushError(luaState, "method not found (or no indexer): " + index);
                             }
                             else
                             {
                                 // Get the index in a form acceptable to the getter
                                 index = translator.getAsType(luaState, 2, actualParms[0].ParameterType);
-
-                                object[] args = new object[1];
-
                                 // Just call the indexer - if out of bounds an exception will happen
-                                args[0] = index;
                                 try
                                 {
-                                    object result = getter.Invoke(obj, args);
+                                    object result = getter.Invoke(obj, new object[]{index});
                                     translator.push(luaState, result);
+                                    failed = false;
                                 }
                                 catch (TargetInvocationException e)
                                 {
                                     // Provide a more readable description for the common case of key not found
                                     if (e.InnerException is KeyNotFoundException)
-                                        translator.throwError(luaState, "key '" + index + "' not found ");
+                                       return translator.pushError(luaState, "key '" + index + "' not found ");
                                     else
-                                        translator.throwError(luaState, "exception indexing '" + index + "' " + e.Message);
+                                       return translator.pushError(luaState, "exception indexing '" + index + "' " + e.Message);
 
-                                    LuaDLL.lua_pushnil(luaState);
+
                                 }
                             }
                         }
@@ -241,7 +219,9 @@ namespace LuaInterface
 
 
             }
-
+            if (failed) {
+                return translator.pushError(luaState,"cannot find " + index);
+            }
             LuaDLL.lua_pushboolean(luaState, false);
             return 2;
         }
@@ -749,6 +729,41 @@ namespace LuaInterface
             LuaDLL.lua_pushnil(luaState);
             return 1;
         }
+		
+		private static bool IsInteger(double x) {
+			return Math.Ceiling(x) == x;	
+		}			
+
+		
+		internal Array TableToArray(object luaParamValue, Type paramArrayType) {
+            Array paramArray;
+
+            if (luaParamValue is LuaTable)  {
+                LuaTable table = (LuaTable)luaParamValue;
+                IDictionaryEnumerator tableEnumerator = table.GetEnumerator();				
+   				tableEnumerator.Reset();
+				paramArray = Array.CreateInstance(paramArrayType, table.Values.Count);                
+
+                int paramArrayIndex = 0;
+				
+                while(tableEnumerator.MoveNext())  {
+					object o = tableEnumerator.Value;
+					if (paramArrayType == typeof(object)) { 
+						if (o != null && o.GetType() == typeof(double) && IsInteger((double)o))
+							o = Convert.ToInt32((double)o);
+					}													
+                    paramArray.SetValue(Convert.ChangeType(o, paramArrayType), paramArrayIndex);
+                    paramArrayIndex++;
+                }
+            } else {
+                paramArray = Array.CreateInstance(paramArrayType, 1);
+                paramArray.SetValue(luaParamValue, 0);
+            }
+	
+			return paramArray;
+			
+		}
+		
         /*
          * Matches a method against its arguments in the Lua stack. Returns
          * if the match was succesful. It it was also returns the information
@@ -798,34 +813,9 @@ namespace LuaInterface
                 else if (_IsParamsArray(luaState, currentLuaParam, currentNetParam, out extractValue))
                 {
                     object luaParamValue = extractValue(luaState, currentLuaParam);
-
                     Type paramArrayType = currentNetParam.ParameterType.GetElementType();
-
-                    Array paramArray;
-
-                    if (luaParamValue is LuaTable)
-                    {
-                        LuaTable table = (LuaTable)luaParamValue;
-                        IDictionaryEnumerator tableEnumerator = table.GetEnumerator();
-
-                        paramArray = Array.CreateInstance(paramArrayType, table.Values.Count);
-
-                        tableEnumerator.Reset();
-
-                        int paramArrayIndex = 0;
-
-                        while(tableEnumerator.MoveNext())
-                        {
-                            paramArray.SetValue(Convert.ChangeType(tableEnumerator.Value, currentNetParam.ParameterType.GetElementType()), paramArrayIndex);
-                            paramArrayIndex++;
-                        }
-                    }
-                    else
-                    {
-                        paramArray = Array.CreateInstance(paramArrayType, 1);
-                        paramArray.SetValue(luaParamValue, 0);
-                    }
-
+					
+ 					Array paramArray = TableToArray(luaParamValue, paramArrayType);					
                     int index = paramList.Add(paramArray);
 
                     MethodArgs methodArg = new MethodArgs();

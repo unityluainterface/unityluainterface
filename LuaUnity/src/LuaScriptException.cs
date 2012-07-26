@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace LuaInterface
 {
@@ -47,7 +47,7 @@ namespace LuaInterface
 
         public override string ToString()
         {
-            // Prepend the error source
+           // Prepend the error source		
             return GetType().FullName + ": " + source + Message;
         }
     }

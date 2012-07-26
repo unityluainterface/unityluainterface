@@ -26,11 +26,12 @@ namespace LuaInterface
                 MethodInfo mi = value as MethodInfo;
                 if (mi != null)
                 {
-                    IsReturnVoid = string.Compare(mi.ReturnType.Name, "System.Void", true) == 0;                    
+                    //SJD this is guaranteed to be correct irrespective of actual name used for type..
+					IsReturnVoid = mi.ReturnType == typeof(void);
                 }
             }
         }
-        
+
         public bool IsReturnVoid;
 
         // List or arguments
@@ -63,7 +64,7 @@ namespace LuaInterface
 
     /*
      * Wrapper class for methods/constructors accessed from Lua.
-     * 
+     *
      * Author: Fabio Mascarenhas
      * Version: 1.0
      */
@@ -125,6 +126,10 @@ namespace LuaInterface
         {
             return _Translator.interpreter.SetPendingException(e);
         }
+		
+		private static bool IsInteger(double x) {
+			return Math.Ceiling(x) == x;	
+		}			
 
 
         /*
@@ -156,51 +161,32 @@ namespace LuaInterface
                 if (_LastCalledMethod.cachedMethod != null) // Cached?
                 {
                     int numStackToSkip = isStatic ? 0 : 1; // If this is an instance invoe we will have an extra arg on the stack for the targetObject
-                    int numArgsPassed = LuaDLL.lua_gettop(luaState) - numStackToSkip;
-
-                    if (numArgsPassed == _LastCalledMethod.argTypes.Length) // No. of args match?
+                    int numArgsPassed = LuaDLL.lua_gettop(luaState) - numStackToSkip;					
+    				MethodBase method = _LastCalledMethod.cachedMethod;
+					
+					if (numArgsPassed == _LastCalledMethod.argTypes.Length) // No. of args match?
                     {
                         if (!LuaDLL.lua_checkstack(luaState, _LastCalledMethod.outList.Length + 6))
                             throw new LuaException("Lua stack overflow");
-
-                        try
+						
+     					object[] args = _LastCalledMethod.args;
+						
+						try
                         {
                             for (int i = 0; i < _LastCalledMethod.argTypes.Length; i++)
                             {
+								MethodArgs type = _LastCalledMethod.argTypes[i];
+								object luaParamValue = type.extractValue(luaState, i + 1 + numStackToSkip);
                                 if (_LastCalledMethod.argTypes[i].isParamsArray)
-                                {
-                                    object luaParamValue = _LastCalledMethod.argTypes[i].extractValue(luaState, i + 1 + numStackToSkip);
-
-                                    Type paramArrayType = _LastCalledMethod.argTypes[i].paramsArrayType;
-
-                                    Array paramArray;
-
-                                    if (luaParamValue is LuaTable)
-                                    {
-                                        LuaTable table = (LuaTable)luaParamValue;
-
-                                        paramArray = Array.CreateInstance(paramArrayType, table.Values.Count);
-
-                                        for (int x = 1; x <= table.Values.Count; x++)
-                                        {
-                                            paramArray.SetValue(Convert.ChangeType(table[x], paramArrayType), x - 1);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        paramArray = Array.CreateInstance(paramArrayType, 1);
-                                        paramArray.SetValue(luaParamValue, 0);
-                                    }
-
-                                    _LastCalledMethod.args[_LastCalledMethod.argTypes[i].index] = paramArray;
+                                {									                                    
+                                    args[type.index] = _Translator.tableToArray(luaParamValue,type.paramsArrayType);
                                 }
                                 else
                                 {
-                                    _LastCalledMethod.args[_LastCalledMethod.argTypes[i].index] =
-                                        _LastCalledMethod.argTypes[i].extractValue(luaState, i + 1 + numStackToSkip);
+                                    args[type.index] = luaParamValue;
                                 }
 
-                                if (_LastCalledMethod.args[_LastCalledMethod.argTypes[i].index] == null &&
+                                if (args[type.index] == null &&
                                     !LuaDLL.lua_isnil(luaState, i + 1 + numStackToSkip))
                                 {
                                     throw new LuaException("argument number " + (i + 1) + " is invalid");
@@ -208,14 +194,14 @@ namespace LuaInterface
                             }
                             if ((_BindingType & BindingFlags.Static) == BindingFlags.Static)
                             {
-                                _Translator.push(luaState, _LastCalledMethod.cachedMethod.Invoke(null, _LastCalledMethod.args));
+                                _Translator.push(luaState, method.Invoke(null, args));
                             }
                             else
                             {
                                 if (_LastCalledMethod.cachedMethod.IsConstructor)
-                                    _Translator.push(luaState, ((ConstructorInfo)_LastCalledMethod.cachedMethod).Invoke(_LastCalledMethod.args));
+                                    _Translator.push(luaState, ((ConstructorInfo)method).Invoke(args));
                                 else
-                                    _Translator.push(luaState, _LastCalledMethod.cachedMethod.Invoke(targetObject, _LastCalledMethod.args));
+                                    _Translator.push(luaState, method.Invoke(targetObject,args));
                             }
                             failedCall = false;
                         }
@@ -279,7 +265,7 @@ namespace LuaInterface
                     }
                 }
             }
-            else // Method from MethodBase instance 
+            else // Method from MethodBase instance
             {
                 if (methodToCall.ContainsGenericParameters)
                 {
@@ -355,15 +341,14 @@ namespace LuaInterface
             for (int index = 0; index < _LastCalledMethod.outList.Length; index++)
             {
                 nReturnValues++;
-                //for(int i=0;i<lastCalledMethod.outList.Length;i++)
                 _Translator.push(luaState, _LastCalledMethod.args[_LastCalledMethod.outList[index]]);
             }
 
-            //by isSingle 2010-09-10 11:26:31 
-            //Desc: 
+            //by isSingle 2010-09-10 11:26:31
+            //Desc:
             //  if not return void,we need add 1,
-            //  or we will lost the function's return value 
-            //  when call dotnet function like "int foo(arg1,out arg2,out arg3)" in lua code 
+            //  or we will lost the function's return value
+            //  when call dotnet function like "int foo(arg1,out arg2,out arg3)" in lua code
             if (!_LastCalledMethod.IsReturnVoid && nReturnValues > 0)
             {
                 nReturnValues++;
@@ -412,7 +397,7 @@ namespace LuaInterface
     /*
      * Wrapper class for events that does registration/deregistration
      * of event handlers.
-     * 
+     *
      * Author: Fabio Mascarenhas
      * Version: 1.0
      */
@@ -477,7 +462,7 @@ namespace LuaInterface
      * Base wrapper class for Lua function event handlers.
      * Subclasses that do actual event handling are created
      * at runtime.
-     * 
+     *
      * Author: Fabio Mascarenhas
      * Version: 1.0
      */
@@ -491,7 +476,7 @@ namespace LuaInterface
         {
             handler.Call(args);
         }
-        //public void handleEvent(object sender,object data) 
+        //public void handleEvent(object sender,object data)
         //{
         //    handler.call(new object[] { sender,data },new Type[0]);
         //}
@@ -501,7 +486,7 @@ namespace LuaInterface
      * Wrapper class for Lua functions as delegates
      * Subclasses with correct signatures are created
      * at runtime.
-     * 
+     *
      * Author: Fabio Mascarenhas
      * Version: 1.0
      */
@@ -545,7 +530,7 @@ namespace LuaInterface
 
     /*
      * Static helper methods for Lua tables acting as CLR objects.
-     * 
+     *
      * Author: Fabio Mascarenhas
      * Version: 1.0
      */
